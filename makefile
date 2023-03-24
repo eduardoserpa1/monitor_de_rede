@@ -1,4 +1,4 @@
-CFLAGS := -O2 -g -Wall -fsanitize=address,undefined
+CFLAGS := -O2 -Wall -fsanitize=address,undefined
 
 main: main.c
 	$(CC) $(CFLAGS) -o $@ $<

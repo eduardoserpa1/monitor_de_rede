@@ -5,6 +5,7 @@
 #include <sys/ioctl.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 
 /* Diretorios: net, netinet, linux contem os includes que descrevem */
 /* as estruturas de dados do header dos protocolos   	  	        */
@@ -39,6 +40,8 @@ int tcp_index = 0;
 
 bool stop = false;
 
+
+
 int packages_sum=0;
 int amount_packages=0;
 int average_length=0;
@@ -61,6 +64,7 @@ int icmpv6_reply=0;
 int tcp=0;
 int udp=0;
 
+int https=0;
 int http=0;
 int dns=0;
 int dhcp=0;
@@ -83,6 +87,16 @@ void signal_handler(int signo){
 }
 
 void print_data(){
+
+	int total_arp = arp_reply + arp_request;
+
+	int total_rede = ipv4 + ipv6 + icmp+ icmpv6;
+
+	int total_transporte = udp + tcp;
+
+	int total_aplicacao = https + http + dns + dhcp + any;
+
+
 	printf("-----------------------------------------\n");
 	printf("PACOTES:\n");
 	printf("min: %d\n",min_length);
@@ -91,29 +105,31 @@ void print_data(){
 
 	printf("ENLACE:\nARP:\n");
 	printf("quantidade: %d\n",arp);
-	printf("	request: %d\n",arp_request);
-	printf("	reply: %d\n\n",arp_reply);
+	printf("	request: %d  %.2f%c\n",arp_request,(float)(arp_request*100)/total_arp,37);
+	printf("	reply: %d  %.2f%c\n\n",arp_reply,(float)(arp_reply*100)/total_arp,37);
 
 	printf("REDE:\n");
-	printf("ipv4: %d\n",ipv4);
-	printf("ipv6: %d\n",ipv6);
-	printf("icmp: %d\n",icmp);
-	printf("	request: %d\n",icmp_request);
-	printf("	reply: %d\n\n",icmp_reply);
-	printf("icmpv6: %d\n",icmpv6);
-	printf("	request: %d\n",icmpv6_request);
-	printf("	reply: %d\n\n",icmpv6_reply);
+	printf("ipv4: %d  %.2f%c\n",ipv4,(float)(ipv4*100)/total_rede,37);
+	printf("ipv6: %d  %.2f%c\n",ipv6,(float)(ipv6*100)/total_rede,37);
+	printf("icmp: %d  %.2f%c\n",icmp,(float)(icmp*100)/total_rede,37);
+	printf("	request: %d  %.2f%c\n",icmp_request,(float)(icmp_request*100)/total_rede,37);
+	printf("	reply: %d  %.2f%c\n\n",icmp_reply,(float)(icmp_reply*100)/total_rede,37);
+	printf("icmpv6: %d  %.2f%c\n",icmpv6,(float)(icmpv6*100)/total_rede,37);
+	printf("	request: %d  %.2f%c\n",icmpv6_request,(float)(icmpv6_request*100)/total_rede,37);
+	printf("	reply: %d  %.2f%c\n\n",icmpv6_reply,(float)(icmpv6_reply*100)/total_rede,37);
 	printf("TRANSPORTE:\n");
-	printf("\ntcp:%d\n",tcp);
+	printf("\ntcp:%d  %.2f%c\n",tcp,(float)(tcp*100)/total_transporte,37);
 	dump(1);
-	printf("\nudp:%d\n",udp);
+	printf("\nudp:%d  %.2f%c\n",udp,(float)(udp*100)/total_transporte,37);
 	dump(2);
 	printf("\nAPLICAÇÃO:\n");
-	printf("http:%d\n",http);
-	printf("dns:%d\n",dns);
-	printf("dhcp:%d\n",dhcp);
-	printf("outro:%d\n",any);
+	printf("https:%d  %.2f%c\n",https,(float)(https*100)/total_aplicacao,37);
+	printf("http:%d  %.2f%c\n",http,(float)(http*100)/total_aplicacao,37);
+	printf("dns:%d  %.2f%c\n",dns,(float)(dns*100)/total_aplicacao,37);
+	printf("dhcp:%d  %.2f%c\n",dhcp,(float)(dhcp*100)/total_aplicacao,37);
+	printf("outro:%d  %.2f%c\n",any,(float)(any*100)/total_aplicacao,37);
 	printf("-----------------------------------------\n");
+
 }
 
 void filter(unsigned char buffer[], int package_length){
@@ -257,6 +273,8 @@ void transporte(unsigned char buffer[],bool is_ipv4, int package_length){
 		}else
 		if(source == 53 || destination == 53){
 			dns++;
+		}if(source == 443 || destination == 443){
+			https++;
 		}else{
 			any++;
 		}
@@ -406,18 +424,15 @@ int main(int argc,char *argv[])
 	signal(SIGINT,&signal_handler);
 
 	strcpy(ifr.ifr_name, "eth0");
-	if(ioctl(sockd, SIOCGIFINDEX, &ifr) < 0)
-		printf("erro no ioctl!\n");
 	ioctl(sockd, SIOCGIFFLAGS, &ifr);
 	ifr.ifr_flags |= IFF_PROMISC;
 	ioctl(sockd, SIOCSIFFLAGS, &ifr);
 
 	while (run) {
    		size_t package_length = recv(sockd,(char *) &buffer, sizeof(buffer), 0x0);
-
 		filter(buffer,package_length);
-		
 	}
+
 	sort();
 	print_data();
 
