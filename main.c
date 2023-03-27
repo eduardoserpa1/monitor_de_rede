@@ -192,8 +192,6 @@ void transporte(unsigned char buffer[],bool is_ipv4, int package_length){
 	bool app = false;
 	int type_transport_port = 0;
 
-	printf(" %d ",buffer[index]);
-
 	switch (buffer[index])
 	{
 	case 6:
@@ -234,7 +232,7 @@ void transporte(unsigned char buffer[],bool is_ipv4, int package_length){
 		break;
 	
 	default:
-		printf("[%x] -> unknown  ",buffer[34]);
+		printf("[%x] -> unknown transport ",buffer[34]);
 		break;
 	}
 
@@ -260,24 +258,30 @@ void transporte(unsigned char buffer[],bool is_ipv4, int package_length){
 			increase(source,2);
 			increase(destination,2);
 		}
-		
 
 		printf(" [%d -> ",source);
 		printf("%d] ",destination);
 
 		if(source == 80 || destination == 80){
 			http++;
+			printf(" HTTP ");
 		}else
 		if((source == 68 || destination == 68)){
 			dhcp++;
+			printf(" DHCP ");
 		}else
 		if(source == 53 || destination == 53){
 			dns++;
+			printf(" DNS ");
 		}if(source == 443 || destination == 443){
 			https++;
+			printf(" HTTPS ");
 		}else{
 			any++;
+			printf(" UNKOWN PORT ");
 		}
+
+		
 	}
 
 	printf("len: %d \n",package_length);
